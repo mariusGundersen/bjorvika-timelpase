@@ -1,4 +1,5 @@
 export default function drawScene(gl, programInfo, buffers, texture, rotate) {
+  gl.viewport(0, 0, 4096, 2048);
   gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
   gl.clearDepth(1.0);                 // Clear everything
   gl.enable(gl.DEPTH_TEST);           // Enable depth testing
