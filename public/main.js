@@ -20,6 +20,7 @@ const programInfo = {
   },
   uniformLocations: {
     uSampler: gl.getUniformLocation(shaderProgram, 'uSampler'),
+    rotate: gl.getUniformLocation(shaderProgram, 'uRotate')
   },
 };
 
@@ -29,15 +30,13 @@ const buffers = initBuffers(gl);
 
 const texture = loadTexture(gl, '/raw/library-2015-04-02.jpg');
 
-var then = 0;
+let x = 0;
+let y = 0;
+let rot = 0;
 
 // Draw the scene repeatedly
 function render(now) {
-  now *= 0.001;  // convert to seconds
-  const deltaTime = now - then;
-  then = now;
-
-  drawScene(gl, programInfo, buffers, texture, deltaTime);
+  drawScene(gl, programInfo, buffers, texture, {x, y, rot});
 
   requestAnimationFrame(render);
 }

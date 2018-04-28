@@ -1,4 +1,4 @@
-export default function drawScene(gl, programInfo, buffers, texture, deltaTime) {
+export default function drawScene(gl, programInfo, buffers, texture, rotate) {
   gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
   gl.clearDepth(1.0);                 // Clear everything
   gl.enable(gl.DEPTH_TEST);           // Enable depth testing
@@ -66,6 +66,9 @@ export default function drawScene(gl, programInfo, buffers, texture, deltaTime) 
 
   // Tell the shader we bound the texture to texture unit 0
   gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
+
+
+  gl.uniform4f(programInfo.uniformLocations.rotate, rotate.y, rotate.x, rotate.rot, 0);
 
   {
     const vertexCount = 6;
