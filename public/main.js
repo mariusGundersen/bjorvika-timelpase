@@ -1,5 +1,5 @@
 import initBuffers from './js/initBuffers.js';
-import loadTexture from './js/loadTexture.js';
+import Texture from './js/Texture.js';
 import initShaderProgram from './js/initShaderProgram.js';
 import drawScene from './js/drawScene.js';
 import { vs, fs } from './js/shader.js';
@@ -7,6 +7,9 @@ import { vs, fs } from './js/shader.js';
 async function run(){
   const img = document.querySelector('img');
   const canvas = document.querySelector('canvas');
+  const pre = document.querySelector('pre');
+  const button = document.querySelector('button');
+
   const gl = canvas.getContext('webgl');
 
   const shaderProgram = initShaderProgram(gl, vs, fs);
@@ -26,8 +29,32 @@ async function run(){
   // Here's where we call the routine that builds all the
   // objects we'll be drawing.
   const buffers = initBuffers(gl);
+  const texture = new Texture(gl);
 
-  const texture = await loadTexture(gl, '/images/library/library-2015-04-02.jpg');
+  let index = 0;
+  const data = await fetch('/api/library.json').then(r => r.json());
+
+  async function next(){
+    if(index > 0){
+      await fetch('/api/position', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          index,
+          image: data.files[index],
+          transform
+        })
+      });
+    }
+    index++;
+    if(index < data.files.length){
+      img.src = data.files[index-1];
+      await texture.load(data.files[index]);
+      render();
+    }
+  }
 
   const transform = {
     x: 0,
@@ -35,6 +62,8 @@ async function run(){
     rot: 0
   };
 
+
+  next();
   render();
 
   // Draw the scene repeatedly
@@ -45,6 +74,7 @@ async function run(){
     img.style.width = width+'px';
     img.style.height = width/2+'px';
     drawScene(gl, programInfo, buffers, texture, {x: transform.x/width, y: transform.y/width*2, rot: transform.rot/width*2});
+    pre.textContent = JSON.stringify(transform, null, 2);
   }
 
   let mouse = {
@@ -53,13 +83,13 @@ async function run(){
     down:false
   };
 
-  document.addEventListener('mousedown', e => {
+  canvas.addEventListener('mousedown', e => {
     mouse.x = e.clientX;
     mouse.y = e.clientY;
     mouse.down = true;
   }, false);
 
-  document.addEventListener('mousemove', e => {
+  canvas.addEventListener('mousemove', e => {
     if(mouse.down){
       const alt = e.altKey ? 1 : 10
       const shift = e.shiftKey;
@@ -75,9 +105,11 @@ async function run(){
     }
   }, false);
 
-  document.addEventListener('mouseup', e => {
+  canvas.addEventListener('mouseup', e => {
     mouse.down = false;
   }, false);
+
+  button.addEventListener('click', e => next());
 }
 
 run();

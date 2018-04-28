@@ -63,7 +63,7 @@ export default function drawScene(gl, programInfo, buffers, texture, rotate) {
   gl.activeTexture(gl.TEXTURE0);
 
   // Bind the texture to texture unit 0
-  gl.bindTexture(gl.TEXTURE_2D, texture);
+  texture.bind();
 
   // Tell the shader we bound the texture to texture unit 0
   gl.uniform1i(programInfo.uniformLocations.uSampler, 0);

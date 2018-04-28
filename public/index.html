@@ -5,10 +5,14 @@
     margin: 0;
     padding: 0;
   }
+
+  div.view {
+    display: grid;
+  }
+
   img, canvas {
-    position: absolute;
-    width: 1024px;
-    height: 512px;
+    grid-row: 1;
+    grid-column: 1;
   }
 
   canvas {
@@ -16,7 +20,11 @@
   }
 </style>
 
-<img src="/images/library/library-2015-06-05.jpg" />
-<canvas width=4096 height=2048></canvas>
+<div class="view">
+  <img src="/images/library/library-2015-06-05.jpg" />
+  <canvas width=4096 height=2048></canvas>
+</div>
+<button>Next</button>
+<pre></pre>
 
 <script type="module" src="main.js"></script>

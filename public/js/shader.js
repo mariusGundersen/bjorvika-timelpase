@@ -20,7 +20,7 @@ export const fs = `
 
   const float PI = 3.141592653589793;
   const vec2 toRad = vec2(2.0 * PI, PI);
-  const vec2 center = vec2(0.5, 0.5);
+  const vec2 center = vec2(0.0, 0.5);
 
   vec3 PRotateX(vec3 p, float theta) {
     return vec3(
