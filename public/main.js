@@ -45,17 +45,9 @@ async function run(){
       });
 
       render();
-      await toImg(canvas, img);
-      canvas.toBlob(blob => {
-        const fd = new FormData();
-        fd.append('file', blob, state.image);
-
-        fetch('/api/upload',
-        {
-            method: 'post',
-            body: fd
-        });
-      })
+      const blob = await toBlob(canvas);
+      await upload(blob, state.image);
+      await toImg(blob, img);
     }else{
       img.src = data.files[0].image;
     }
@@ -69,7 +61,6 @@ async function run(){
         state.transform = current.transform;
       }
       render();
-      await next();
     }
   }
 
@@ -137,16 +128,27 @@ async function run(){
 
 run();
 
-function toImg(canvas, img) {
-  return new Promise(res => canvas.toBlob(blob => {
-    const url = URL.createObjectURL(blob);
+const toBlob = canvas => new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.95));
 
-    img.onload = function() {
-      // no longer need to read the blob so it's revoked
-      URL.revokeObjectURL(url);
-      res();
-    };
+async function upload(blob, name){
+  const fd = new FormData();
+  fd.append('file', blob, name);
 
-    img.src = url;
-  }));
+  await fetch('/api/upload',
+  {
+      method: 'post',
+      body: fd
+  });
 }
+
+const toImg = (blob, img) => new Promise(res => {
+  const url = URL.createObjectURL(blob);
+
+  img.onload = function() {
+    // no longer need to read the blob so it's revoked
+    URL.revokeObjectURL(url);
+    res();
+  };
+
+  img.src = url;
+});
