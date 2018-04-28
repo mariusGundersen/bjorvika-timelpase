@@ -43,15 +43,25 @@ async function run(){
         },
         body: JSON.stringify({
           index,
-          image: data.files[index],
+          image: data.files[index].image,
           transform
         })
       });
+
+      render();
+      await toImg(canvas, img);
+    }else{
+      img.src = data.files[0].image;
     }
     index++;
     if(index < data.files.length){
-      img.src = data.files[index-1];
-      await texture.load(data.files[index]);
+      const current = data.files[index];
+      await texture.load(current.image);
+      if(current.transform){
+        transform.x = current.transform.x;
+        transform.y = current.transform.y;
+        transform.rot = current.transform.rot;
+      }
       render();
     }
   }
@@ -67,13 +77,13 @@ async function run(){
   render();
 
   // Draw the scene repeatedly
-  function render(now) {
+  function render() {
     const width = window.innerWidth;
     canvas.style.width = width+'px';
     canvas.style.height = width/2+'px';
     img.style.width = width+'px';
     img.style.height = width/2+'px';
-    drawScene(gl, programInfo, buffers, texture, {x: transform.x/width, y: transform.y/width*2, rot: transform.rot/width*2});
+    drawScene(gl, programInfo, buffers, texture, {x: transform.x, y: transform.y, rot: transform.rot});
     pre.textContent = JSON.stringify(transform, null, 2);
   }
 
@@ -93,11 +103,12 @@ async function run(){
     if(mouse.down){
       const alt = e.altKey ? 1 : 10
       const shift = e.shiftKey;
+      const width = window.innerWidth;
       if(shift){
-        transform.rot += (e.clientY - mouse.y)/alt;
+        transform.rot += (e.clientY - mouse.y)/alt/width*2;
       }else{
-        transform.x += (e.clientX - mouse.x)/alt;
-        transform.y -= (e.clientY - mouse.y)/alt;
+        transform.x += (e.clientX - mouse.x)/alt/width;
+        transform.y -= (e.clientY - mouse.y)/alt/width*2;
       }
       mouse.x = e.clientX;
       mouse.y = e.clientY;
@@ -113,3 +124,17 @@ async function run(){
 }
 
 run();
+
+function toImg(canvas, img) {
+  return new Promise(res => canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+
+    img.onload = function() {
+      // no longer need to read the blob so it's revoked
+      //URL.revokeObjectURL(url);
+      res();
+    };
+
+    img.src = url;
+  }));
+}
