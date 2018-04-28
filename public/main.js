@@ -41,15 +41,21 @@ async function run(){
         headers: {
           'content-type': 'application/json'
         },
-        body: JSON.stringify({
-          index,
-          image: data.files[index].image,
-          transform
-        })
+        body: JSON.stringify(state)
       });
 
       render();
       await toImg(canvas, img);
+      canvas.toBlob(blob => {
+        const fd = new FormData();
+        fd.append('file', blob, state.image);
+
+        fetch('/api/upload',
+        {
+            method: 'post',
+            body: fd
+        });
+      })
     }else{
       img.src = data.files[0].image;
     }
@@ -57,19 +63,25 @@ async function run(){
     if(index < data.files.length){
       const current = data.files[index];
       await texture.load(current.image);
+      state.index = index;
+      state.image = current.image;
       if(current.transform){
-        transform.x = current.transform.x;
-        transform.y = current.transform.y;
-        transform.rot = current.transform.rot;
+        state.transform = current.transform;
       }
       render();
+      await next();
     }
   }
 
+  const state = {
+    transform: {
+      x: 0,
+      y: 0,
+      rot: 0
+    }
+  };
+
   const transform = {
-    x: 0,
-    y: 0,
-    rot: 0
   };
 
 
@@ -83,8 +95,8 @@ async function run(){
     canvas.style.height = width/2+'px';
     img.style.width = width+'px';
     img.style.height = width/2+'px';
-    drawScene(gl, programInfo, buffers, texture, {x: transform.x, y: transform.y, rot: transform.rot});
-    pre.textContent = JSON.stringify(transform, null, 2);
+    drawScene(gl, programInfo, buffers, texture, state.transform);
+    pre.textContent = JSON.stringify(state, null, 2);
   }
 
   let mouse = {
@@ -105,10 +117,10 @@ async function run(){
       const shift = e.shiftKey;
       const width = window.innerWidth;
       if(shift){
-        transform.rot += (e.clientY - mouse.y)/alt/width*2;
+        state.transform.rot += (e.clientY - mouse.y)/alt/width*2;
       }else{
-        transform.x += (e.clientX - mouse.x)/alt/width;
-        transform.y -= (e.clientY - mouse.y)/alt/width*2;
+        state.transform.x += (e.clientX - mouse.x)/alt/width;
+        state.transform.y -= (e.clientY - mouse.y)/alt/width*2;
       }
       mouse.x = e.clientX;
       mouse.y = e.clientY;
@@ -131,7 +143,7 @@ function toImg(canvas, img) {
 
     img.onload = function() {
       // no longer need to read the blob so it's revoked
-      //URL.revokeObjectURL(url);
+      URL.revokeObjectURL(url);
       res();
     };
 

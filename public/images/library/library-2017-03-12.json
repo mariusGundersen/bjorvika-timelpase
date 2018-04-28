@@ -1,9 +1,9 @@
 {
-  "index": 48,
-  "image": "/images/library/library-2017-03-12.jpg",
   "transform": {
     "x": -0.16018285714285488,
     "y": 0.005631051212938048,
     "rot": 0.00887590296495963
-  }
+  },
+  "index": 48,
+  "image": "/images/library/library-2017-03-12.jpg"
 }

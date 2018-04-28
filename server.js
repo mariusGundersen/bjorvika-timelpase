@@ -1,7 +1,7 @@
 const Koa = require('koa');
 const serve = require('koa-static');
 const Router = require('koa-router');
-const bodyparser = require('koa-bodyparser');
+const koaBody = require('koa-body');
 const fs = require('fs');
 
 const router = new Router();
@@ -27,10 +27,20 @@ router.post('/api/position', async ctx => {
   const file = body.image.replace('.jpg', '.json');
   await writeJson(`public/${file}`, body);
   ctx.status = 200;
-})
+});
+
+router.post('/api/upload', async ctx => {
+  console.log(ctx.request.body);
+  const file = ctx.request.body.files.file;
+  const reader = fs.createReadStream(file.path);
+  const stream = fs.createWriteStream(`.${file.name}`);
+  reader.pipe(stream);
+  console.log('uploading %s -> %s', file.name, stream.path);
+  ctx.status = 200;
+});
 
 const app = new Koa();
-app.use(bodyparser());
+app.use(koaBody({ multipart: true }));
 app.use(serve('public'));
 app.use(router.routes());
 
