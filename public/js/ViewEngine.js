@@ -1,32 +1,46 @@
 import Texture from './Texture.js';
-import initRectangle from './initRectangle.js';
+import Rectangle from './Rectangle.js';
 import initShaderProgram from './initShaderProgram.js';
-import drawScene from './drawScene.js';
 import { vs, fs } from './shader.js';
 
 export default class ViewEngine{
-  constructor(gl){
+  constructor(gl, width, height){
     this.gl = gl;
-    const shaderProgram = initShaderProgram(gl, vs, fs);
+    this.width = width;
+    this.height = height;
+    this.shader = initShaderProgram(gl, vs, fs);
+    this.buffers = new Rectangle(gl);
+    this.texture = new Texture(gl);
 
-    this.programInfo = {
-      program: shaderProgram,
-      attribLocations: {
-        vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
-        textureCoord: gl.getAttribLocation(shaderProgram, 'aTextureCoord'),
-      },
-      uniformLocations: {
-        uSampler: gl.getUniformLocation(shaderProgram, 'uSampler'),
-        rotate: gl.getUniformLocation(shaderProgram, 'uRotate')
-      },
+    this.attribLocations = {
+      vertexPosition: gl.getAttribLocation(this.shader, 'aVertexPosition'),
+      textureCoord: gl.getAttribLocation(this.shader, 'aTextureCoord'),
     };
 
-    this.buffers = initRectangle(gl);
-    this.texture = new Texture(gl);
+    this.uniformLocations = {
+      uSampler: gl.getUniformLocation(this.shader, 'uSampler'),
+      rotate: gl.getUniformLocation(this.shader, 'uRotate')
+
+    };
   }
 
-  render(transform){
-    drawScene(this.gl, this.programInfo, this.buffers, this.texture, transform);
+  render(rotate){
+    this.gl.viewport(0, 0, this.width, this.height);
+    this.gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
+    this.gl.clearDepth(1.0);                 // Clear everything
+    this.gl.enable(this.gl.DEPTH_TEST);      // Enable depth testing
+    this.gl.depthFunc(this.gl.LEQUAL);       // Near things obscure far things
+
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+
+    this.buffers.bind(this.attribLocations);
+
+    this.gl.useProgram(this.shader);
+
+    this.gl.uniform1i(this.uniformLocations.uSampler, this.texture.sampler2D(0));
+    this.gl.uniform4f(this.uniformLocations.rotate, rotate.y, rotate.x, rotate.rot, 0);
+
+    this.buffers.draw();
   }
 
   async load(url){

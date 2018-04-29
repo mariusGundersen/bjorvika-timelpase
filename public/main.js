@@ -11,7 +11,7 @@ async function run(){
   const addPointButton = document.querySelector('.add-point');
 
   const gl = canvas.getContext('webgl');
-  const viewEngine = new ViewEngine(gl);
+  const viewEngine = new ViewEngine(gl, 4096, 2048);
 
   const data = await fetch('/api/images/munch').then(r => r.json());
   let index = data.files.length - 1;

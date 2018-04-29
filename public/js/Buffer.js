@@ -21,7 +21,7 @@ export default class Buffer {
     this.count = indices.length;
   }
 
-  bind(vertexPosition, textureCoord){
+  bind({vertexPosition, textureCoord}){
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.position);
     this.gl.vertexAttribPointer(vertexPosition, 3, this.gl.FLOAT, false, 0, 0);
     this.gl.enableVertexAttribArray(vertexPosition);
