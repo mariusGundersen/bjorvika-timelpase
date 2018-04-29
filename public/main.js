@@ -1,65 +1,75 @@
-import initBuffers from './js/initBuffers.js';
-import Texture from './js/Texture.js';
-import initShaderProgram from './js/initShaderProgram.js';
-import drawScene from './js/drawScene.js';
-import { vs, fs } from './js/shader.js';
+import ViewEngine from './js/ViewEngine.js';
+import { toBlob, toImg, upload } from './js/utils.js';
 
 async function run(){
   const img = document.querySelector('img');
   const canvas = document.querySelector('canvas');
+  const pointsElm = document.querySelector('.points');
   const pre = document.querySelector('pre');
-  const button = document.querySelector('button');
+  const nextButton = document.querySelector('.next');
+  const prevButton = document.querySelector('.prev');
+  const addPointButton = document.querySelector('.add-point');
 
   const gl = canvas.getContext('webgl');
-
-  const shaderProgram = initShaderProgram(gl, vs, fs);
-
-  const programInfo = {
-    program: shaderProgram,
-    attribLocations: {
-      vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
-      textureCoord: gl.getAttribLocation(shaderProgram, 'aTextureCoord'),
-    },
-    uniformLocations: {
-      uSampler: gl.getUniformLocation(shaderProgram, 'uSampler'),
-      rotate: gl.getUniformLocation(shaderProgram, 'uRotate')
-    },
-  };
-
-  // Here's where we call the routine that builds all the
-  // objects we'll be drawing.
-  const buffers = initBuffers(gl);
-  const texture = new Texture(gl);
+  const viewEngine = new ViewEngine(gl);
 
   const data = await fetch('/api/images/munch').then(r => r.json());
-  let index = data.files.length-1;
+  let index = data.files.length - 1;
+  img.src = data.files[index].image;
 
-  async function next(){
-    if(index < data.files.length-1){
-      await fetch('/api/position', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify(state)
-      });
+  function render() {
+    const width = window.innerWidth;
+    canvas.style.width = width+'px';
+    canvas.style.height = width/2+'px';
+    img.style.width = width+'px';
+    img.style.height = width/2+'px';
+    viewEngine.render(state.transform);
+    pre.textContent = JSON.stringify(state, null, 2);
+  }
 
-      render();
-      const blob = await toBlob(canvas);
-      await upload(blob, state.image);
-      await toImg(blob, img);
-    }else{
-      img.src = data.files[index].image;
+  async function saveState(state, canvas, img){
+    await fetch('/api/position', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify(state)
+    });
+
+    render();
+    const blob = await toBlob(canvas);
+    await upload(blob, state.image);
+    await toImg(blob, img);
+  }
+
+  async function loadState(data, index){
+    const current = data.files[index];
+    await viewEngine.load(current.image);
+    state.index = index;
+    state.image = current.image;
+    if(current.transform){
+      state.transform = current.transform;
     }
+    if(current.points){
+      state.points = current.points;
+    }else{
+      state.points = [];
+    }
+  }
+
+  async function prev(){
+    await saveState(state, canvas, img);
     index--;
     if(index >= 0){
-      const current = data.files[index];
-      await texture.load(current.image);
-      state.index = index;
-      state.image = current.image;
-      if(current.transform){
-        state.transform = current.transform;
-      }
+      await loadState(data, index);
+      render();
+    }
+  }
+  async function next(){
+    await saveState(state, canvas, img);
+    index++;
+    if(index < data.files.length){
+      await loadState(data, index);
       render();
     }
   }
@@ -69,27 +79,15 @@ async function run(){
       x: 0,
       y: 0,
       rot: 0
-    }
+    },
+    ponits: []
   };
 
-  const transform = {
-  };
 
-
-  next();
+  await loadState(data, index);
   render();
 
-  // Draw the scene repeatedly
-  function render() {
-    const width = window.innerWidth;
-    canvas.style.width = width+'px';
-    canvas.style.height = width/2+'px';
-    img.style.width = width+'px';
-    img.style.height = width/2+'px';
-    drawScene(gl, programInfo, buffers, texture, state.transform);
-    pre.textContent = JSON.stringify(state, null, 2);
-  }
-
+  let uiState = 'ROTATE';
   let mouse = {
     x:0,
     y:0,
@@ -97,58 +95,52 @@ async function run(){
   };
 
   canvas.addEventListener('mousedown', e => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
+    mouse.x = e.offsetX;
+    mouse.y = e.offsetY;
     mouse.down = true;
+    if(uiState === 'ROTATE'){
+    }else if(uiState === 'ADD-POINT'){
+      const point = document.createElement('div');
+      point.className = 'point';
+      point.style.transform = `translate(${mouse.x}px, ${mouse.y}px)`;
+      pointsElm.appendChild(point);
+    }
   }, false);
 
   canvas.addEventListener('mousemove', e => {
     if(mouse.down){
-      const alt = e.altKey ? 1 : 10
-      const shift = e.shiftKey;
-      const width = window.innerWidth;
-      if(shift){
-        state.transform.rot += (e.clientY - mouse.y)/alt/width*2;
-      }else{
-        state.transform.x += (e.clientX - mouse.x)/alt/width;
-        state.transform.y -= (e.clientY - mouse.y)/alt/width*2;
+      if(uiState === 'ROTATE'){
+        const alt = e.altKey ? 1 : 10
+        const shift = e.shiftKey;
+        const width = window.innerWidth;
+        if(shift){
+          state.transform.rot += (e.offsetY - mouse.y)/alt/width*2;
+        }else{
+          state.transform.x += (e.offsetX - mouse.x)/alt/width;
+          state.transform.y -= (e.offsetY - mouse.y)/alt/width*2;
+        }
+        mouse.x = e.offsetX;
+        mouse.y = e.offsetY;
+        render();
       }
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-      render();
     }
   }, false);
 
   canvas.addEventListener('mouseup', e => {
     mouse.down = false;
+    if(uiState === 'ROTATE'){
+    } else if(uiState === 'ADD-POINT'){
+      uiState = 'ROTATE';
+    }
   }, false);
 
-  button.addEventListener('click', e => next());
+  function addPoint(){
+    uiState = 'ADD-POINT';
+  }
+
+  nextButton.addEventListener('click', next);
+  prevButton.addEventListener('click', prev);
+  addPointButton.addEventListener('click', addPoint);
 }
 
 run();
-
-const toBlob = canvas => new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.95));
-
-async function upload(blob, name){
-  const fd = new FormData();
-  fd.append('file', blob, name);
-
-  await fetch('/api/upload',
-  {
-      method: 'post',
-      body: fd
-  });
-}
-
-const toImg = (blob, img) => new Promise(res => {
-  const url = URL.createObjectURL(blob);
-
-  img.onload = function() {
-    // no longer need to read the blob so it's revoked
-    URL.revokeObjectURL(url);
-    res();
-  };
-
-  img.src = url;
-});

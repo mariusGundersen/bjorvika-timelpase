@@ -11,7 +11,17 @@
     display: grid;
   }
 
-  img, canvas {
+  div.points .point {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 20px;
+    border: 3px solid white;
+    margin: -13px;
+    background: #00000080;
+  }
+
+  img, canvas, .points {
     grid-row: 1;
     grid-column: 1;
   }
@@ -21,11 +31,16 @@
   }
 </style>
 
-<div class="view">
-  <img src="/images/library/library-2015-06-05.jpg" />
-  <canvas width=4096 height=2048></canvas>
+<div class="toolbar">
+  <button class="prev">Previous</button>
+  <button class="add-point">Add point</button>
+  <button class="next">Next</button>
 </div>
-<button>Next</button>
+<div class="view">
+  <img />
+  <canvas width=4096 height=2048></canvas>
+  <div class="points"></div>
+</div>
 <pre></pre>
 
 <script type="module" src="main.js"></script>
