@@ -6,15 +6,16 @@ const fs = require('fs');
 
 const router = new Router();
 
-router.get('/api/library.json', async ctx => {
-  const files = await new Promise((res, rej) => fs.readdir('public/images/library', (err, files) => err ? rej(err) : res(files)));
+router.get('/api/images/:name', async ctx => {
+  const path = `images/${ctx.params.name}`;
+  const files = await new Promise((res, rej) => fs.readdir(`public/${path}`, (err, files) => err ? rej(err) : res(files)));
 
   ctx.body = {
     files: await Promise.all(files
       .filter(f => /\.jpg/.test(f))
       .map(async f => ({
-        image: `/images/library/${f}`,
-        transform: await readJson(`public/images/library/${f.replace('.jpg', '.json')}`)
+        image: `/${path}/${f}`,
+        transform: await readJson(`public/${path}/${f.replace('.jpg', '.json')}`)
           .then(d => d.transform)
           .catch(e => null)
       })))

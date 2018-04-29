@@ -31,11 +31,11 @@ async function run(){
   const buffers = initBuffers(gl);
   const texture = new Texture(gl);
 
-  let index = 0;
-  const data = await fetch('/api/library.json').then(r => r.json());
+  const data = await fetch('/api/images/munch').then(r => r.json());
+  let index = data.files.length-1;
 
   async function next(){
-    if(index > 0){
+    if(index < data.files.length-1){
       await fetch('/api/position', {
         method: 'POST',
         headers: {
@@ -49,10 +49,10 @@ async function run(){
       await upload(blob, state.image);
       await toImg(blob, img);
     }else{
-      img.src = data.files[0].image;
+      img.src = data.files[index].image;
     }
-    index++;
-    if(index < data.files.length){
+    index--;
+    if(index >= 0){
       const current = data.files[index];
       await texture.load(current.image);
       state.index = index;
