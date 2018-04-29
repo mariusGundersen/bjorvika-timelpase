@@ -1,0 +1,1 @@
+ffmpeg -pattern_type glob -framerate 5 -i 'images/library/*.jpg' movie.mp4
