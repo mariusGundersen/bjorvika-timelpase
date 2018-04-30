@@ -1,5 +1,7 @@
 import ViewEngine from './js/ViewEngine.js';
+import DistortEngine from './js/DistortEngine.js';
 import { toBlob, toImg, upload } from './js/utils.js';
+import RenderTexture from './js/RenderTexture.js';
 
 async function run(){
   const img = document.querySelector('img');
@@ -11,7 +13,11 @@ async function run(){
   const addPointButton = document.querySelector('.add-point');
 
   const gl = canvas.getContext('webgl');
+  const distortEngine = new DistortEngine(gl, 4096, 2048);
+  const framebuffer = new RenderTexture(gl, 4096, 2048);
   const viewEngine = new ViewEngine(gl, 4096, 2048);
+
+  distortEngine.render(framebuffer);
 
   const data = await fetch('/api/images/munch').then(r => r.json());
   let index = data.files.length - 1;
@@ -23,7 +29,7 @@ async function run(){
     canvas.style.height = width/2+'px';
     img.style.width = width+'px';
     img.style.height = width/2+'px';
-    viewEngine.render(state.transform);
+    viewEngine.render(state.transform, framebuffer);
     pre.textContent = JSON.stringify(state, null, 2);
   }
 

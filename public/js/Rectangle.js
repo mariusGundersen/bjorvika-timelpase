@@ -4,8 +4,8 @@ export default class Rectangle extends Buffer{
   constructor(gl){
     const positions = [
       -1.0, -1.0,  1.0,
-      1.0, -1.0,  1.0,
-      1.0,  1.0,  1.0,
+       1.0, -1.0,  1.0,
+       1.0,  1.0,  1.0,
       -1.0,  1.0,  1.0
     ];
 
