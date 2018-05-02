@@ -1,6 +1,8 @@
 import Texture from './Texture.js';
 import Mesh from './Mesh.js';
 import initShaderProgram from './initShaderProgram.js';
+import RenderTexture from './RenderTexture.js';
+
 export const vs = `
   attribute vec4 aVertexPosition;
   attribute vec2 aDistortVector;
@@ -29,7 +31,12 @@ export default class DistortEngine{
     this.width = width;
     this.height = height;
     this.shader = initShaderProgram(gl, vs, fs);
-    this.buffers = new Mesh(gl, 36, 18);
+    this.texture = new RenderTexture(gl, width, height);
+    this.buffers = new Mesh(gl, [
+      {x:0, y:0, dx:0, dy:0},
+      {x:-1, y:0, dx:0, dy:0},
+      {x:1, y:0, dx:0, dy:0}
+    ]);
 
     this.attribLocations = {
       vertexPosition: gl.getAttribLocation(this.shader, 'aVertexPosition'),
@@ -40,8 +47,17 @@ export default class DistortEngine{
     };
   }
 
-  render(target){
-    if(target) target.bindFramebuffer();
+  setPoints(points){
+    this.buffers.updatePoints(points.map(p => ({
+      x: p.x*2-1,
+      y: p.y*2-1,
+      dx: p.dx*this.width,
+      dy: p.dy*this.height
+    })));
+  }
+
+  render(debug=false){
+    if(!debug) this.texture.bindFramebuffer();
     this.gl.viewport(0, 0, this.width, this.height);
     this.gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
     this.gl.clearDepth(1.0);                 // Clear everything
@@ -55,6 +71,6 @@ export default class DistortEngine{
     this.gl.useProgram(this.shader);
 
     this.buffers.draw();
-    if(target) target.unbindFramebuffer();
+    if(!debug) this.texture.unbindFramebuffer();
   }
 }

@@ -14,10 +14,9 @@ router.get('/api/images/:name', async ctx => {
     files: await Promise.all(files
       .filter(f => /\.jpg/.test(f))
       .map(async f => ({
+        ...await readJson(`public/${path}/${f.replace('.jpg', '.json')}`)
+          .catch(e => {}),
         image: `/${path}/${f}`,
-        transform: await readJson(`public/${path}/${f.replace('.jpg', '.json')}`)
-          .then(d => d.transform)
-          .catch(e => null)
       })))
   };
 });

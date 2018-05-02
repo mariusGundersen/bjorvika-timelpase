@@ -22,6 +22,7 @@ export const fs = `
   uniform sampler2D uSourceSampler;
   uniform sampler2D uDistortSampler;
   uniform vec4 uRotate;
+  uniform vec4 uBitsPerPixel;
 
   const float PI = 3.141592653589793;
   const vec2 toRad = vec2(2.0 * PI, PI);
@@ -84,7 +85,7 @@ export const fs = `
     );
 
     vec2 coord = thetaPhi/toRad + center;
-    vec4 distort = texture2D(uDistortSampler, coord)/16.0;
+    vec4 distort = texture2D(uDistortSampler, coord) * uBitsPerPixel;
     gl_FragColor = texture2D(uSourceSampler, coord + distort.rg - distort.ba);
   }
 `;
@@ -100,13 +101,14 @@ export default class ViewEngine{
 
     this.attribLocations = {
       vertexPosition: gl.getAttribLocation(this.shader, 'aVertexPosition'),
-      textureCoord: gl.getAttribLocation(this.shader, 'aTextureCoord'),
+      textureCoord: gl.getAttribLocation(this.shader, 'aTextureCoord')
     };
 
     this.uniformLocations = {
       uSourceSampler: gl.getUniformLocation(this.shader, 'uSourceSampler'),
       uDistortSampler: gl.getUniformLocation(this.shader, 'uDistortSampler'),
-      uRotate: gl.getUniformLocation(this.shader, 'uRotate')
+      uRotate: gl.getUniformLocation(this.shader, 'uRotate'),
+      uBitsPerPixel: gl.getUniformLocation(this.shader, 'uBitsPerPixel')
     };
   }
 
@@ -126,6 +128,7 @@ export default class ViewEngine{
     this.gl.uniform1i(this.uniformLocations.uSourceSampler, this.texture.sampler2D(0));
     this.gl.uniform1i(this.uniformLocations.uDistortSampler, texture.sampler2D(1));
     this.gl.uniform4f(this.uniformLocations.uRotate, rotate.y, rotate.x, rotate.rot, 0);
+    this.gl.uniform4f(this.uniformLocations.uBitsPerPixel, 256/this.width, 256/this.height, 256/this.width, 256/this.height);
 
     this.buffers.draw();
   }

@@ -1,42 +1,40 @@
 import Buffer from "./Buffer.js";
+import Delaunator from './Delaunator.js';
 
 export default class Mesh extends Buffer{
-  constructor(gl, cols, rows){
-    const positions = [];
-    const textureCoordinates = [];
-    const indices = [];
-
-    let p=0;
-    let t=0;
-    let i=0;
-    let j=0;
-    for(let y=0; y<rows; y++){
-      for(let x=0; x<cols; x++){
-        positions[p++] = x/(cols-1)*2-1;
-        positions[p++] = y/(rows-1)*2-1;
-        positions[p++] = 1.0;
-        textureCoordinates[t++] = 0;
-        textureCoordinates[t++] = 0;
-        if(y !== rows-1){
-          if(x === cols-1){
-            j++;
-          }else{
-            indices[i++] = j+0;
-            indices[i++] = j+1;
-            indices[i++] = j+cols;
-            indices[i++] = j+1;
-            indices[i++] = j+1+cols;
-            indices[i++] = j+cols;
-            j++;
-          }
-        }
-      }
-    }
-
-    super(gl, {
-      positions,
-      textureCoordinates,
-      indices
-    });
+  constructor(gl, points=[]){
+    super(gl, toVBO(points));
   }
+
+  updatePoints(points){
+    console.log(points);
+    super.update(toVBO(points));
+  }
+}
+
+function toVBO(points){
+  points = [
+    {x:-1, y:-1, dx:0, dy:0},
+    {x:0,  y:-1, dx:0, dy:0},
+    {x:1,  y:-1, dx:0, dy:0},
+    {x:1,  y:0, dx:0, dy:0},
+    {x:1,  y:1,  dx:0, dy:0},
+    {x:0,  y:1,  dx:0, dy:0},
+    {x:-1, y:1,  dx:0, dy:0},
+    {x:-1, y:0,  dx:0, dy:0},
+    {x:0,  y:0,  dx:0, dy:0},
+    ...points
+  ];
+  const positions = points.map(p => [p.x, p.y, 1.0]).reduce(flatten);
+  const textureCoordinates = points.map(p => [p.dx/256, p.dy/256]).reduce(flatten);
+  const indices = Delaunator.from(points, p => p.x, p => p.y).triangles;
+  return {
+    positions,
+    textureCoordinates,
+    indices
+  };
+}
+
+function flatten(list=[], value=[]){
+  return list.concat(value);
 }

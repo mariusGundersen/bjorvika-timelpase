@@ -6,6 +6,7 @@ import RenderTexture from './js/RenderTexture.js';
 async function run(){
   const img = document.querySelector('img');
   const canvas = document.querySelector('canvas');
+  const viewElm = document.querySelector('.view');
   const pointsElm = document.querySelector('.points');
   const pre = document.querySelector('pre');
   const nextButton = document.querySelector('.next');
@@ -14,23 +15,33 @@ async function run(){
 
   const gl = canvas.getContext('webgl');
   const distortEngine = new DistortEngine(gl, 4096, 2048);
-  const framebuffer = new RenderTexture(gl, 4096, 2048);
   const viewEngine = new ViewEngine(gl, 4096, 2048);
-
-  distortEngine.render(framebuffer);
 
   const data = await fetch('/api/images/munch').then(r => r.json());
   let index = data.files.length - 1;
   img.src = data.files[index].image;
 
   function render() {
+    renderUi();
+    distortEngine.setPoints(state.points.map(toPoint));
+    distortEngine.render();
+    viewEngine.render(state.transform, distortEngine.texture);
+  }
+
+  function renderUi(){
     const width = window.innerWidth;
-    canvas.style.width = width+'px';
-    canvas.style.height = width/2+'px';
-    img.style.width = width+'px';
-    img.style.height = width/2+'px';
-    viewEngine.render(state.transform, framebuffer);
-    pre.textContent = JSON.stringify(state, null, 2);
+    const height = width/2;
+    viewElm.style.width = width+'px';
+    viewElm.style.height = height+'px';
+
+    // Hurray for DOM thrashing!
+    pointsElm.innerHTML = template`
+      ${state.points.map(renderPoint(width, height))}
+    `;
+  }
+
+  function renderPoint(width, height){
+    return point => template`<line x1="${point.x*width}" y1="${point.y*height}" x2="${(point.x+point.dx)*width}" y2="${(point.y+point.dy)*height}" stroke-width="2" stroke="red" />`
   }
 
   async function saveState(state, canvas, img){
@@ -86,7 +97,7 @@ async function run(){
       y: 0,
       rot: 0
     },
-    ponits: []
+    points: []
   };
 
 
@@ -97,46 +108,64 @@ async function run(){
   let mouse = {
     x:0,
     y:0,
-    down:false
+    down:false,
+    selectedPoint:null
   };
 
-  canvas.addEventListener('mousedown', e => {
+  viewElm.addEventListener('mousedown', e => {
     mouse.x = e.offsetX;
     mouse.y = e.offsetY;
     mouse.down = true;
     if(uiState === 'ROTATE'){
     }else if(uiState === 'ADD-POINT'){
-      const point = document.createElement('div');
-      point.className = 'point';
-      point.style.transform = `translate(${mouse.x}px, ${mouse.y}px)`;
-      pointsElm.appendChild(point);
+      const width = window.innerWidth;
+      const height = width/2;
+      const point = {
+        x: mouse.x/width,
+        y: mouse.y/height,
+        dx: 0,
+        dy: 0,
+      };
+      state.points.push(point);
+      mouse.selectedPoint = point;
+      render();
     }
   }, false);
 
-  canvas.addEventListener('mousemove', e => {
+  viewElm.addEventListener('mousemove', e => {
     if(mouse.down){
       if(uiState === 'ROTATE'){
         const alt = e.altKey ? 1 : 10
         const shift = e.shiftKey;
         const width = window.innerWidth;
+        const height = width/2;
         if(shift){
-          state.transform.rot += (e.offsetY - mouse.y)/alt/width*2;
+          state.transform.rot += (e.offsetY - mouse.y)/alt/height;
         }else{
           state.transform.x += (e.offsetX - mouse.x)/alt/width;
-          state.transform.y -= (e.offsetY - mouse.y)/alt/width*2;
+          state.transform.y -= (e.offsetY - mouse.y)/alt/height;
         }
         mouse.x = e.offsetX;
         mouse.y = e.offsetY;
+        render();
+      }else if(uiState === 'ADD-POINT'){
+        const width = window.innerWidth;
+        const height = width/2;
+        const point = mouse.selectedPoint;
+        point.dx = e.offsetX/width - point.x;
+        point.dy = e.offsetY/height - point.y;
         render();
       }
     }
   }, false);
 
-  canvas.addEventListener('mouseup', e => {
+  viewElm.addEventListener('mouseup', e => {
     mouse.down = false;
     if(uiState === 'ROTATE'){
     } else if(uiState === 'ADD-POINT'){
       uiState = 'ROTATE';
+      mouse.selectedPoint = null;
+      render();
     }
   }, false);
 
@@ -150,3 +179,14 @@ async function run(){
 }
 
 run();
+
+function toPoint(d){
+  return {
+    x: d.x,
+    y: d.y,
+    dx: d.dx,
+    dy: d.dy
+  };
+}
+
+const template = (strings, ...data) => String.raw(strings, ...data.map(d => Array.isArray(d) ? d.join('') : d));
