@@ -50,7 +50,7 @@ export default class DistortEngine{
   setPoints(points){
     this.buffers.updatePoints(points.map(p => ({
       x: p.x*2-1,
-      y: p.y*2-1,
+      y: -p.y*2+1,
       dx: p.dx*this.width,
       dy: p.dy*this.height
     })));
