@@ -11,7 +11,9 @@ async function run(){
   const pre = document.querySelector('pre');
   const nextButton = document.querySelector('.next');
   const prevButton = document.querySelector('.prev');
+  const statusElm = document.querySelector('.status');
   const addPointButton = document.querySelector('.add-point');
+  const visibility = document.querySelector('.visibility');
 
   const gl = canvas.getContext('webgl');
   const distortEngine = new DistortEngine(gl, 4096, 2048);
@@ -38,6 +40,8 @@ async function run(){
     pointsElm.innerHTML = template`
       ${state.points.map(renderPoint(width, height))}
     `;
+
+    statusElm.innerHTML = `${index}/${data.files.length}`;
   }
 
   function renderPoint(width, height){
@@ -163,19 +167,26 @@ async function run(){
     mouse.down = false;
     if(uiState === 'ROTATE'){
     } else if(uiState === 'ADD-POINT'){
-      uiState = 'ROTATE';
+      swapUiState();
       mouse.selectedPoint = null;
       render();
     }
   }, false);
 
-  function addPoint(){
-    uiState = 'ADD-POINT';
+  function swapUiState(){
+    if(uiState === 'ROTATE'){
+      uiState = 'ADD-POINT';
+      viewElm.dataset.state = 'ADD-POINT';
+    }else{
+      uiState = 'ROTATE';
+      viewElm.dataset.state = 'ROTATE';
+    }
   }
 
   nextButton.addEventListener('click', next);
   prevButton.addEventListener('click', prev);
-  addPointButton.addEventListener('click', addPoint);
+  addPointButton.addEventListener('click', swapUiState);
+  visibility.addEventListener('input', e => canvas.style.opacity = visibility.value/100);
 }
 
 run();

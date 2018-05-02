@@ -7,9 +7,25 @@
     overflow: hidden;
   }
 
+  div.toolbar {
+    display: flex;
+    flex-direction: row;
+  }
+
   div.view {
     position: relative;
     display: grid;
+  }
+
+  div.view[data-state=ADD-POINT] {
+    cursor: copy;
+  }
+  div.view[data-state=ROTATE] {
+    cursor: move;
+  }
+
+  .points{
+    z-index: 1;
   }
 
   div.points .point {
@@ -36,15 +52,31 @@
 
 <div class="toolbar">
   <button class="prev">Previous</button>
-  <button class="add-point">Add point</button>
+  <pre class="status">0/0</pre>
   <button class="next">Next</button>
+  <button class="add-point">Add point</button>
+  <input type="range" class="visibility" list="tickmarks" />
 </div>
-<div class="view">
+<div class="view" data-state="ROTATE">
   <img />
   <canvas width=4096 height=2048></canvas>
   <svg class="points">
   </svg>
 </div>
 <pre></pre>
+
+<datalist id="tickmarks">
+  <option value="0" label="prev">
+  <option value="10">
+  <option value="20">
+  <option value="30">
+  <option value="40">
+  <option value="50" label="50%">
+  <option value="60">
+  <option value="70">
+  <option value="80">
+  <option value="90">
+  <option value="100" label="this">
+</datalist>
 
 <script type="module" src="main.js"></script>
