@@ -1,0 +1,30 @@
+<!doctype>
+
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  div.view {
+    position: relative;
+    display: grid;
+  }
+
+  img, canvas, .points {
+    grid-row: 1;
+    grid-column: 1;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  canvas {
+  }
+</style>
+
+<div class="view" data-state="ROTATE">
+  <canvas width=4096 height=2048></canvas>
+</div>
+
+<script type="module" src="errors.js"></script>
