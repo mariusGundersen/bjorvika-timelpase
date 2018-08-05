@@ -4,14 +4,14 @@ import initShaderProgram from './initShaderProgram.js';
 import RenderTexture from './RenderTexture.js';
 
 export const vs = `
-  attribute vec4 aVertexPosition;
-  attribute vec2 aDistortVector;
+  attribute vec4 vertexPosition;
+  attribute vec2 distortVector;
 
   varying highp vec2 vDistortVector;
 
   void main(void) {
-    gl_Position = aVertexPosition * vec4(1.0, -1.0, 1.0, 1.0);
-    vDistortVector = aDistortVector;
+    gl_Position = vertexPosition * vec4(1.0, -1.0, 1.0, 1.0);
+    vDistortVector = distortVector;
   }
 `;
 
@@ -37,14 +37,6 @@ export default class DistortEngine{
       {x:-1, y:0, dx:0, dy:0},
       {x:1, y:0, dx:0, dy:0}
     ]);
-
-    this.attribLocations = {
-      vertexPosition: gl.getAttribLocation(this.shader, 'aVertexPosition'),
-      textureCoord: gl.getAttribLocation(this.shader, 'aDistortVector'),
-    };
-
-    this.uniformLocations = {
-    };
   }
 
   setPoints(points){
@@ -66,9 +58,12 @@ export default class DistortEngine{
 
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
-    this.buffers.bind(this.attribLocations);
+    this.buffers.bind(
+      this.shader.attributes.vertexPosition,
+      this.shader.attributes.distortVector
+    );
 
-    this.gl.useProgram(this.shader);
+    this.shader.bind();
 
     this.buffers.draw();
     if(!debug) this.texture.unbindFramebuffer();

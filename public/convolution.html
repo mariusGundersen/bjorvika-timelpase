@@ -1,0 +1,26 @@
+<!doctype>
+
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  div.view {
+    position: relative;
+    display: grid;
+  }
+
+  img, canvas, .points {
+    grid-row: 1;
+    grid-column: 1;
+    width: 100vw;
+  }
+</style>
+
+<div class="view">
+  <canvas width=4096 height=2048></canvas>
+</div>
+
+<script type="module" src="convolution.js"></script>

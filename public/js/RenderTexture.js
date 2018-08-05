@@ -28,4 +28,10 @@ export default class RenderTexture extends Texture{
   unbindFramebuffer(){
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
   }
+
+  using(render){
+    this.bindFramebuffer();
+    render();
+    this.unbindFramebuffer();
+  }
 }

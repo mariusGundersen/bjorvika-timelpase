@@ -3,14 +3,14 @@ import Rectangle from './Rectangle.js';
 import initShaderProgram from './initShaderProgram.js';
 
 export const vs = `
-  attribute vec4 aVertexPosition;
-  attribute vec2 aTextureCoord;
+  attribute vec4 vertexPosition;
+  attribute vec2 textureCoord;
 
   varying highp vec2 vTextureCoord;
 
   void main(void) {
-    gl_Position = aVertexPosition * vec4(1.0, -1.0, 1.0, 1.0);
-    vTextureCoord = aTextureCoord;
+    gl_Position = vertexPosition * vec4(1.0, -1.0, 1.0, 1.0);
+    vTextureCoord = textureCoord;
   }
 `;
 
@@ -19,10 +19,10 @@ export const fs = `
 
   varying highp vec2 vTextureCoord;
 
-  uniform sampler2D uSourceSampler;
-  uniform sampler2D uDistortSampler;
-  uniform vec4 uRotate;
-  uniform vec4 uBitsPerPixel;
+  uniform sampler2D sourceSampler;
+  uniform sampler2D distortSampler;
+  uniform vec4 rotate;
+  uniform vec4 bitsPerPixel;
 
   const float PI = 3.141592653589793;
   const vec2 toRad = vec2(2.0 * PI, PI);
@@ -75,9 +75,9 @@ export const fs = `
       cos(latLong.y) * cos(latLong.x)
     );
 
-    ray = PRotateX(ray, uRotate.x * 2.0*PI);
-    ray = PRotateY(ray, uRotate.y * 2.0*PI);
-    ray = PRotateZ(ray, uRotate.z * 2.0*PI);
+    ray = PRotateX(ray, rotate.x * 2.0*PI);
+    ray = PRotateY(ray, rotate.y * 2.0*PI);
+    ray = PRotateZ(ray, rotate.z * 2.0*PI);
 
     vec2 thetaPhi = vec2(
       atan2(ray.x, ray.z),
@@ -85,8 +85,8 @@ export const fs = `
     );
 
     vec2 coord = thetaPhi/toRad + center;
-    vec4 distort = texture2D(uDistortSampler, coord) * uBitsPerPixel;
-    gl_FragColor = texture2D(uSourceSampler, coord + distort.rg - distort.ba);
+    vec4 distort = texture2D(distortSampler, coord) * bitsPerPixel;
+    gl_FragColor = texture2D(sourceSampler, coord + distort.rg - distort.ba);
   }
 `;
 
@@ -98,18 +98,6 @@ export default class ViewEngine{
     this.shader = initShaderProgram(gl, vs, fs);
     this.buffers = new Rectangle(gl);
     this.texture = new Texture(gl);
-
-    this.attribLocations = {
-      vertexPosition: gl.getAttribLocation(this.shader, 'aVertexPosition'),
-      textureCoord: gl.getAttribLocation(this.shader, 'aTextureCoord')
-    };
-
-    this.uniformLocations = {
-      uSourceSampler: gl.getUniformLocation(this.shader, 'uSourceSampler'),
-      uDistortSampler: gl.getUniformLocation(this.shader, 'uDistortSampler'),
-      uRotate: gl.getUniformLocation(this.shader, 'uRotate'),
-      uBitsPerPixel: gl.getUniformLocation(this.shader, 'uBitsPerPixel')
-    };
   }
 
   render(rotate, texture){
@@ -121,14 +109,17 @@ export default class ViewEngine{
 
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
-    this.buffers.bind(this.attribLocations);
+    this.buffers.bind(
+      this.shader.attributes.vertexPosition,
+      this.shader.attributes.textureCoord
+    );
 
-    this.gl.useProgram(this.shader);
+    this.shader.bind();
 
-    this.gl.uniform1i(this.uniformLocations.uSourceSampler, this.texture.sampler2D(0));
-    this.gl.uniform1i(this.uniformLocations.uDistortSampler, texture.sampler2D(1));
-    this.gl.uniform4f(this.uniformLocations.uRotate, rotate.y, rotate.x, rotate.rot, 0);
-    this.gl.uniform4f(this.uniformLocations.uBitsPerPixel, 256/this.width, 256/this.height, 256/this.width, 256/this.height);
+    this.shader.uniforms.sourceSampler = this.texture.sampler2D(0);
+    this.shader.uniforms.distortSampler = texture.sampler2D(1);
+    this.shader.uniforms.rotate = [rotate.y, rotate.x, rotate.rot, 0];
+    this.shader.uniforms.bitsPerPixel = [256/this.width, 256/this.height, 256/this.width, 256/this.height];
 
     this.buffers.draw();
   }
