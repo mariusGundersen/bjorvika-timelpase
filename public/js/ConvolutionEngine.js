@@ -1,4 +1,3 @@
-import Texture from './Texture.js';
 import Rectangle from './Rectangle.js';
 import initShaderProgram from './initShaderProgram.js';
 
@@ -9,7 +8,7 @@ export const vs = `
   varying highp vec2 vTextureCoord;
 
   void main(void) {
-    gl_Position = vertexPosition * vec4(1.0, -1.0, 1.0, 1.0);
+    gl_Position = vertexPosition;
     vTextureCoord = textureCoord;
   }
 `;
@@ -42,24 +41,13 @@ export const fs = `
 `;
 
 export default class ConvolutionEngine{
-  constructor(gl, width, height){
+  constructor(gl){
     this.gl = gl;
-    this.width = width;
-    this.height = height;
     this.shader = initShaderProgram(gl, vs, fs);
     this.buffers = new Rectangle(gl);
-    this.texture = new Texture(gl);
   }
 
-  render(kernel){
-    this.gl.viewport(0, 0, this.width, this.height);
-    this.gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
-    this.gl.clearDepth(1.0);                 // Clear everything
-    this.gl.enable(this.gl.DEPTH_TEST);      // Enable depth testing
-    this.gl.depthFunc(this.gl.LEQUAL);       // Near things obscure far things
-
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-
+  render(source, kernel){
     this.buffers.bind(
       this.shader.attributes.vertexPosition,
       this.shader.attributes.textureCoord
@@ -67,14 +55,10 @@ export default class ConvolutionEngine{
 
     this.shader.bind();
 
-    this.shader.uniforms.sourceSampler = this.texture.sampler2D(0);
+    this.shader.uniforms.sourceSampler = source.sampler2D(0);
     this.shader.uniforms.kernel = kernel;
-    this.shader.uniforms.size = [this.width, this.height];
+    this.shader.uniforms.size = [source.width, source.height];
 
     this.buffers.draw();
-  }
-
-  async load(url){
-    return await this.texture.load(url);
   }
 }

@@ -19,9 +19,10 @@ async function run(){
   const distortEngine = new DistortEngine(gl, 4096, 2048);
   const viewEngine = new ViewEngine(gl, 4096, 2048);
 
+  img.src = '/images/munch/average_red.png';
   const data = await fetch('/api/images/munch').then(r => r.json());
-  let index = data.files.length - 1;
-  img.src = data.files[index].image;
+  let index = 0;
+  //img.src = data.files[index].image;
 
   function render() {
     renderUi();
@@ -60,7 +61,7 @@ async function run(){
     render();
     const blob = await toBlob(canvas);
     await upload(blob, state.image);
-    await toImg(blob, img);
+    //await toImg(blob, img);
   }
 
   async function loadState(data, index){

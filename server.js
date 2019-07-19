@@ -1,6 +1,6 @@
-const Koa = require('koa');
-const serve = require('koa-static');
-const Router = require('koa-router');
+const Koa = require('../../.cache/typescript/2.9/node_modules/@types/koa');
+const serve = require('../../.cache/typescript/2.9/node_modules/@types/koa-static');
+const Router = require('../../.cache/typescript/2.9/node_modules/@types/koa-router');
 const koaBody = require('koa-body');
 const fs = require('fs');
 
